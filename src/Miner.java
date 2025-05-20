@@ -1,11 +1,12 @@
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 
 public class Miner {
 
-    private Queue<String> pool;
+    private Queue<Transaction> pool;
 
     public Miner() {
         this.pool = new LinkedList<>();
@@ -13,16 +14,19 @@ public class Miner {
     public void mine(Blockchain blockChain) {
         while (!pool.isEmpty()) {
             Block block = createBlock(blockChain);
-            System.out.println(STR."Mining block with index \{block.getIndex()}...");
+            System.out.println("Mining block with index " + block.getIndex() + "...");
             proofOfWork(block, blockChain.getDifficulty());
-            System.out.println(STR."Block mined with hash: \{HashUtils.toHex(block.getHash())}");
+            System.out.println("Block mined with hash: " + HashUtils.toHex(block.getHash()));
             blockChain.addToChain(block);
         }
     }
 
     private Block createBlock(Blockchain blockChain) {
-        String data = pool.remove();
-        return new Block(blockChain.getChainSize(), data, blockChain.getLastBlockHash());
+        ArrayList<Transaction> transactions = new ArrayList<>();
+        while (!pool.isEmpty()) {
+            transactions.add(pool.remove());
+        }
+        return new Block(blockChain.getChainSize(), transactions, blockChain.getLastBlockHash());
     }
 
     private void proofOfWork(Block block, int difficulty) {
@@ -37,8 +41,8 @@ public class Miner {
         }
     }
 
-    public void addToPool(String... data) {
-        pool.addAll(Arrays.asList(data));
+    public void addToPool(Transaction... transactions) {
+        pool.addAll(Arrays.asList(transactions));
     }
 
 }

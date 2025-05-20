@@ -41,7 +41,7 @@ public class Main {
     private static void changeDifficulty(Blockchain blockchain) {
         System.out.println("The difficulty represents the number of leading zeroes needed for a block's hash to be considered valid");
         System.out.println("A higher difficulty requires more processing power to mine blocks");
-        System.out.println(STR."The current difficulty is: \{blockchain.getDifficulty()}");
+        System.out.println("The current difficulty is: " + blockchain.getDifficulty());
 
         System.out.print("Enter new difficultly: ");
         int num;
@@ -56,14 +56,14 @@ public class Main {
             }
         } while (num < 1);
         blockchain.setDifficulty(num);
-        System.out.println(STR."Difficulty set to \{blockchain.getDifficulty()}");
+        System.out.println("Difficulty set to " + blockchain.getDifficulty());
     }
 
     private static void addBlocks(Blockchain blockchain) {
-        System.out.println("How many blocks do you want to add?");
+        System.out.println("How many transactions do you want to add?");
         int num;
         do {
-            System.out.print("Number of blocks: ");
+            System.out.print("Number of transactions: ");
             try {
                 num = new Scanner(System.in).nextInt();
             } catch (InputMismatchException e) {
@@ -74,10 +74,29 @@ public class Main {
             }
         } while (num < 1);
 
-        String[] data = new String[num];
-        for (int i = 1; i <= num; i++) {
-            System.out.print(STR."Enter text data for block \{i}: ");
-            data[i-1] = new Scanner(System.in).nextLine();
+//        String[] data = new String[num];
+//        for (int i = 1; i <= num; i++) {
+//            System.out.print(STR."Enter text data for block \{i}: ");
+//            data[i-1] = new Scanner(System.in).nextLine();
+//        }
+
+        Transaction[] data = new Transaction[num];
+        for (int i = 0; i < num; i++) {
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Enter sender for transaction " + i + ": ");
+            String sender = scanner.nextLine();
+            System.out.print("Enter receiver for transaction " + i + ": ");
+            String receiver = scanner.nextLine();
+            System.out.print("Enter amount for transaction " + i + ": ");
+            long amount;
+            try {
+                amount = scanner.nextLong();
+                if (amount <= 0) throw new InputMismatchException();
+            } catch (InputMismatchException e) {
+                System.out.println("Need to enter a valid number above 0. Operation cancelled.");
+                return;
+            }
+            data[i] = new Transaction(sender, receiver, amount);
         }
 
         System.out.print("Confirm and mine block(s)?[y/n]: ");
