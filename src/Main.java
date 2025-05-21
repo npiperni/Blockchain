@@ -4,22 +4,27 @@ public class Main {
 
     // A real blockchain node wouldn't store wallets in memory like this, but for simplicity I want to allow users to create wallets using the same interface
     private static final Map<String, Wallet> wallets = new HashMap<>();
-    private static final Map<UTXO, Transaction.Output> utxoSet = new HashMap<>();
+    private static Wallet minerWallet = new Wallet();
 
     public static void main(String[] args) {
+        wallets.put(minerWallet.getAddress(), minerWallet);
 
-        Blockchain chain = new Blockchain(3);
+        Blockchain chain = new Blockchain(3, minerWallet.getAddress());
 
         System.out.println("----------------------Welcome-to-Blockchain-Explorer----------------------");
 
+        System.out.println("Your miner wallet address is: " + minerWallet.getAddress());
+        System.out.println("You can set a different wallet for mining in the options menu");
 
         boolean running = true;
         while (running) {
             System.out.println("1: View Blockchain");
             System.out.println("2: Create Wallet");
-            System.out.println("3: Send Money");
-            System.out.println("4: Change Difficulty");
-            System.out.println("5: Exit");
+            System.out.println("3: View Wallet Balance");
+            System.out.println("4: Connect Mining Wallet");
+            System.out.println("5: Send Money");
+            System.out.println("6: Change Mining Difficulty");
+            System.out.println("7: Exit");
             System.out.print("Enter option: ");
             Scanner scanner = new Scanner(System.in);
             switch (scanner.next()) {
@@ -30,12 +35,18 @@ public class Main {
                     createWallet();
                     break;
                 case "3":
-                    sendMoney(chain);
+                    viewWalletBalance(chain);
                     break;
                 case "4":
-                    changeDifficulty(chain);
+                    connectMiningWallet();
                     break;
                 case "5":
+                    sendMoney(chain);
+                    break;
+                case "6":
+                    changeDifficulty(chain);
+                    break;
+                case "7":
                     running = false;
                     break;
                 default:
@@ -51,6 +62,36 @@ public class Main {
         String address = wallet.getAddress();
         wallets.put(address, wallet);
         System.out.println("Wallet created with address: " + address);
+    }
+
+    private static void connectMiningWallet() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter wallet address: ");
+        String address = scanner.nextLine();
+        Wallet wallet = wallets.get(address);
+        if (wallet == null) {
+            System.out.println("Wallet not found. You must own this wallet to set it as the mining wallet.");
+            return;
+        }
+        minerWallet = wallet;
+        System.out.println("Mining wallet set to: " + address);
+        System.out.println("This wallet will be used for mining rewards.");
+    }
+
+    private static void viewWalletBalance(Blockchain blockchain) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter wallet address: ");
+        String address = scanner.nextLine();
+        Wallet wallet = wallets.get(address);
+        if (wallet == null) {
+            System.out.println("Wallet not found.");
+            return;
+        }
+        long balance = 0;
+        for (Map.Entry<UTXO, Transaction.Output> entry : blockchain.getUTXOs(address).entrySet()) {
+            balance += entry.getValue().getAmount();
+        }
+        System.out.println("Balance: " + balance);
     }
 
     private static void changeDifficulty(Blockchain blockchain) {
@@ -100,15 +141,13 @@ public class Main {
         List<UTXO> inputs = new ArrayList<>();
         long totalCollected = 0;
 
-        for (Map.Entry<UTXO, Transaction.Output> entry : utxoSet.entrySet()) {
+        for (Map.Entry<UTXO, Transaction.Output> entry : blockchain.getUTXOs(senderAddress).entrySet()) {
             UTXO utxo = entry.getKey();
             Transaction.Output output = entry.getValue();
 
-            if (output.getAddress().equals(senderAddress)) {
-                inputs.add(new UTXO(utxo.getTransactionId(), utxo.getOutputIndex()));
-                totalCollected += output.getAmount();
-                if (totalCollected >= amount) break;
-            }
+            inputs.add(new UTXO(utxo.getTransactionId(), utxo.getOutputIndex()));
+            totalCollected += output.getAmount();
+            if (totalCollected >= amount) break;
         }
 
 
@@ -139,16 +178,10 @@ public class Main {
             }
             Miner miner = new Miner();
             miner.addToPool(tx);
-            miner.mine(blockchain);
+            miner.mine(blockchain, minerWallet.getAddress());
 
-            // Step 4: Update UTXO set manually (since Blockchain doesn't do it)
-            for (UTXO input : inputs) {
-                utxoSet.remove(new UTXO(input.getTransactionId(), input.getOutputIndex()));
-            }
-            List<Transaction.Output> newOutputs = tx.getOutputs();
-            for (int i = 0; i < newOutputs.size(); i++) {
-                utxoSet.put(new UTXO(tx.getTransactionId(), i), newOutputs.get(i));
-            }
+            // Step 4: Update UTXO set manually (since Miner doesn't do it)
+            blockchain.updateUTXOs(tx);
         } else {
             System.out.println("Operation Cancelled");
         }

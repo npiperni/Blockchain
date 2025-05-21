@@ -7,8 +7,8 @@ import java.util.UUID;
 public class Transaction {
 
     public static class Output {
-        private String address; // The address of the recipient
-        private long amount; // The amount of cryptocurrency in this UTXO
+        private final String address; // The address of the recipient
+        private final long amount; // The amount of cryptocurrency in this UTXO
 
         public Output(String address, long amount) {
             this.address = address;
@@ -24,7 +24,7 @@ public class Transaction {
         }
     }
 
-    private String transactionId;
+    private final String transactionId;
     private List<UTXO> inputs = new ArrayList<>();
     private List<Output> outputs = new ArrayList<>();
     private byte[] signature;

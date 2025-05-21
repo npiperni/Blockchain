@@ -1,18 +1,17 @@
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.HexFormat;
-import java.util.LinkedList;
+import java.util.*;
 
 public class Blockchain {
 
     private int difficulty;
-    private LinkedList<Block> chain;
+    private final LinkedList<Block> chain;
+    private static final Map<UTXO, Transaction.Output> utxoSet = new HashMap<>();
 
-    public Blockchain(int difficulty) {
+    public Blockchain(int difficulty, String genesisAddress) {
         System.out.println("Initializing Blockchain...");
         this.difficulty = difficulty;
         this.chain = new LinkedList<>();
-        createFirstBlock();
+        createFirstBlock(genesisAddress);
     }
 
     private boolean validate(Block block) {
@@ -64,12 +63,32 @@ public class Blockchain {
         System.out.println("==================================================================================");
     }
 
-    private void createFirstBlock() {
+    private void createFirstBlock(String genesisAddress) {
         System.out.println("Creating Genesis Block...");
         Miner miner = new Miner();
-        Transaction first = new Transaction("System", 0);
-        miner.addToPool(first);
-        miner.mine(this);
+        miner.mine(this, genesisAddress);
+    }
+
+    public Map<UTXO, Transaction.Output> getUTXOs(String address) {
+        Map<UTXO, Transaction.Output> result = new HashMap<>();
+        for (Map.Entry<UTXO, Transaction.Output> entry : utxoSet.entrySet()) {
+            Transaction.Output output = entry.getValue();
+            if (output.getAddress().equals(address)) {
+                result.put(entry.getKey(), output);
+            }
+        }
+        return result;
+    }
+
+    public void updateUTXOs(Transaction... transactions) {
+        for (Transaction transaction : transactions) {
+            for (UTXO input : transaction.getInputs()) {
+                utxoSet.remove(input);
+            }
+            for (int i = 0; i < transaction.getOutputs().size(); i++) {
+                utxoSet.put(new UTXO(transaction.getTransactionId(), i), transaction.getOutputs().get(i));
+            }
+        }
     }
 
 }

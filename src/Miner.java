@@ -1,8 +1,5 @@
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 public class Miner {
 
@@ -11,21 +8,22 @@ public class Miner {
     public Miner() {
         this.pool = new LinkedList<>();
     }
-    public void mine(Blockchain blockChain) {
-        while (!pool.isEmpty()) {
-            Block block = createBlock(blockChain);
-            System.out.println("Mining block with index " + block.getIndex() + "...");
-            proofOfWork(block, blockChain.getDifficulty());
-            System.out.println("Block mined with hash: " + HashUtils.toHex(block.getHash()));
-            blockChain.addToChain(block);
-        }
-    }
-
-    private Block createBlock(Blockchain blockChain) {
-        ArrayList<Transaction> transactions = new ArrayList<>();
+    public void mine(Blockchain blockChain, String minerAddress) {
+        List<Transaction> transactions = new ArrayList<>();
         while (!pool.isEmpty()) {
             transactions.add(pool.remove());
         }
+        Transaction blockReward = new Transaction(minerAddress, 50); // Coinbase transaction
+        transactions.add(blockReward);
+        Block block = createBlock(blockChain, transactions);
+        System.out.println("Mining block with index " + block.getIndex() + "...");
+        proofOfWork(block, blockChain.getDifficulty());
+        System.out.println("Block mined with hash: " + HashUtils.toHex(block.getHash()));
+        blockChain.addToChain(block);
+        blockChain.updateUTXOs(blockReward);
+    }
+
+    private Block createBlock(Blockchain blockChain, List<Transaction> transactions) {
         return new Block(blockChain.getChainSize(), transactions, blockChain.getLastBlockHash());
     }
 

@@ -1,8 +1,8 @@
 import java.util.Objects;
 
 public class UTXO {
-    private String transactionId; // The ID of the transaction that created this UTXO
-    private int outputIndex; // The index of the output in the transaction
+    private final String transactionId; // The ID of the transaction that created this UTXO
+    private final int outputIndex; // The index of the output in the transaction
 
     public UTXO(String transactionId, int outputIndex) {
         this.transactionId = transactionId;
