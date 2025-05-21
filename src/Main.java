@@ -4,6 +4,7 @@ public class Main {
 
     // A real blockchain node wouldn't store wallets in memory like this, but for simplicity I want to allow users to create wallets using the same interface
     private static final Map<String, Wallet> wallets = new HashMap<>();
+    private static final Map<UTXO, Transaction.Output> utxoSet = new HashMap<>();
 
     public static void main(String[] args) {
 
@@ -95,7 +96,38 @@ public class Main {
             return;
         }
 
-        Transaction tx = new Transaction(senderAddress, receiver, amount);
+        // Step 1: Find enough UTXOs for sender
+        List<UTXO> inputs = new ArrayList<>();
+        long totalCollected = 0;
+
+        for (Map.Entry<UTXO, Transaction.Output> entry : utxoSet.entrySet()) {
+            UTXO utxo = entry.getKey();
+            Transaction.Output output = entry.getValue();
+
+            if (output.getAddress().equals(senderAddress)) {
+                inputs.add(new UTXO(utxo.getTransactionId(), utxo.getOutputIndex()));
+                totalCollected += output.getAmount();
+                if (totalCollected >= amount) break;
+            }
+        }
+
+
+        if (totalCollected < amount) {
+            System.out.println("Insufficient funds.");
+            return;
+        }
+
+        // Step 2: Create outputs
+        List<Transaction.Output> outputs = new ArrayList<>();
+        outputs.add(new Transaction.Output(receiver, amount)); // Send to receiver
+
+        long change = totalCollected - amount;
+        if (change > 0) {
+            outputs.add(new Transaction.Output(senderAddress, change)); // Send change back
+        }
+
+        // Step 3: Create, sign, and verify transaction
+        Transaction tx = new Transaction(inputs, outputs);
         tx.signTransaction(senderWallet);
 
         System.out.print("Confirm and mine block(s)?[y/n]: ");
@@ -108,8 +140,18 @@ public class Main {
             Miner miner = new Miner();
             miner.addToPool(tx);
             miner.mine(blockchain);
+
+            // Step 4: Update UTXO set manually (since Blockchain doesn't do it)
+            for (UTXO input : inputs) {
+                utxoSet.remove(new UTXO(input.getTransactionId(), input.getOutputIndex()));
+            }
+            List<Transaction.Output> newOutputs = tx.getOutputs();
+            for (int i = 0; i < newOutputs.size(); i++) {
+                utxoSet.put(new UTXO(tx.getTransactionId(), i), newOutputs.get(i));
+            }
         } else {
             System.out.println("Operation Cancelled");
         }
     }
+
 }

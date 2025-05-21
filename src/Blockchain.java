@@ -67,7 +67,7 @@ public class Blockchain {
     private void createFirstBlock() {
         System.out.println("Creating Genesis Block...");
         Miner miner = new Miner();
-        Transaction first = new Transaction("System", "Genesis Block", 0);
+        Transaction first = new Transaction("System", 0);
         miner.addToPool(first);
         miner.mine(this);
     }
