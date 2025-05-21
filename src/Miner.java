@@ -3,7 +3,7 @@ import java.util.*;
 
 public class Miner {
 
-    private Queue<Transaction> pool;
+    private final Queue<Transaction> pool;
 
     public Miner() {
         this.pool = new LinkedList<>();
