@@ -1,28 +1,33 @@
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 public class Miner {
 
-    private Queue<String> pool;
+    private final Queue<Transaction> pool;
 
     public Miner() {
         this.pool = new LinkedList<>();
     }
-    public void mine(Blockchain blockChain) {
+    public void mine(Blockchain blockChain, String minerAddress) {
+        List<Transaction> transactions = new ArrayList<>();
         while (!pool.isEmpty()) {
-            Block block = createBlock(blockChain);
-            System.out.println(STR."Mining block with index \{block.getIndex()}...");
-            proofOfWork(block, blockChain.getDifficulty());
-            System.out.println(STR."Block mined with hash: \{HashUtils.toHex(block.getHash())}");
-            blockChain.addToChain(block);
+            transactions.add(pool.remove());
+        }
+        Transaction blockReward = new Transaction(minerAddress, 50); // Coinbase transaction
+        transactions.add(blockReward);
+        Block block = createBlock(blockChain, transactions);
+        System.out.println("Mining block with index " + block.getIndex() + "...");
+        proofOfWork(block, blockChain.getDifficulty());
+        System.out.println("Block mined with hash: " + HashUtils.toHex(block.getHash()));
+        blockChain.addToChain(block);
+        // Let the miner update the UTXOs
+        for (Transaction transaction : transactions) {
+            blockChain.updateUTXOs(transaction);
         }
     }
 
-    private Block createBlock(Blockchain blockChain) {
-        String data = pool.remove();
-        return new Block(blockChain.getChainSize(), data, blockChain.getLastBlockHash());
+    private Block createBlock(Blockchain blockChain, List<Transaction> transactions) {
+        return new Block(blockChain.getChainSize(), transactions, blockChain.getLastBlockHash());
     }
 
     private void proofOfWork(Block block, int difficulty) {
@@ -37,8 +42,8 @@ public class Miner {
         }
     }
 
-    public void addToPool(String... data) {
-        pool.addAll(Arrays.asList(data));
+    public void addToPool(Transaction... transactions) {
+        pool.addAll(Arrays.asList(transactions));
     }
 
 }
