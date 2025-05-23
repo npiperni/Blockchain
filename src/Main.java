@@ -99,7 +99,7 @@ public class Main {
         System.out.println("A higher difficulty requires more processing power to mine blocks");
         System.out.println("The current difficulty is: " + blockchain.getDifficulty());
 
-        System.out.print("Enter new difficultly: ");
+        System.out.print("Enter new difficulty: ");
         int num;
         do {
             try {
@@ -179,9 +179,6 @@ public class Main {
             Miner miner = new Miner();
             miner.addToPool(tx);
             miner.mine(blockchain, minerWallet.getAddress());
-
-            // Step 4: Update UTXO set manually (since Miner doesn't do it)
-            blockchain.updateUTXOs(tx);
         } else {
             System.out.println("Operation Cancelled");
         }

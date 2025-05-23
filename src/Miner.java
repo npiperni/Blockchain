@@ -20,7 +20,10 @@ public class Miner {
         proofOfWork(block, blockChain.getDifficulty());
         System.out.println("Block mined with hash: " + HashUtils.toHex(block.getHash()));
         blockChain.addToChain(block);
-        blockChain.updateUTXOs(blockReward);
+        // Let the miner update the UTXOs
+        for (Transaction transaction : transactions) {
+            blockChain.updateUTXOs(transaction);
+        }
     }
 
     private Block createBlock(Blockchain blockChain, List<Transaction> transactions) {
